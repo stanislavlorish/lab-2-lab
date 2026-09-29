@@ -1,0 +1,15 @@
+
+*.o
+*.out
+*.exe
+/farmer
+/build/
+
+
+.vs/
+.vscode/
+.idea/
+
+
+.DS_Store
+Thumbs.db
