@@ -84,7 +84,7 @@ bool inventory_drop_item(void)
     }
 
     inventory[slot] = ITEM_EMPTY;
-    printf("Слот %d очищен.\n", slot);
+    printf("предмет из Слота %d выброшен.\n", slot);
     return true;
 }
 
