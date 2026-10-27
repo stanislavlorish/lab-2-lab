@@ -1,38 +1,8 @@
 #include "inventory.h"
 #include "constants.h"
-#include "input.h"
-
-#include <stdio.h>
+#include "item_catalog.h"
 
 static int inventory[INVENTORY_SIZE] = { ITEM_EMPTY };
-
-static const char *item_name(int item_id)
-{
-    switch (item_id) {
-        case ITEM_EMPTY:
-            return "Пусто";
-        case ITEM_TREE:
-            return "Дерево";
-        case ITEM_STONE:
-            return "Камень";
-        case ITEM_SEEDS:
-            return "Семена";
-        case ITEM_CARROT:
-            return "Морковь";
-        case ITEM_APPLE:
-            return "Яблоко";
-        case ITEM_FIBER:
-            return "Волокно";
-        case ITEM_IRON_ORE:
-            return "Железная руда";
-        case ITEM_FISH:
-            return "Рыба";
-        case ITEM_MILK:
-            return "Молоко";
-        default:
-            return "Неизвестный предмет";
-    }
-}
 
 void inventory_initialize(void)
 {
@@ -44,51 +14,63 @@ void inventory_initialize(void)
     inventory[START_SLOT_FIBER] = ITEM_FIBER;
 }
 
-void inventory_print(void)
+bool inventory_set_item(int slot, int item_id)
 {
-    int slot;
-
-    for (slot = SLOT_FIRST; slot < INVENTORY_SIZE; ++slot) {
-        printf("Слот %d: [%d]", slot, inventory[slot]);
-        if (inventory[slot] != ITEM_EMPTY) {
-            printf(" (%s)", item_name(inventory[slot]));
-        }
-        putchar('\n');
-    }
-}
-
-bool inventory_place_item(void)
-{
-    int slot;
-    int item_id;
-
-    if (!read_integer("Введите индекс слота (0-9): ", SLOT_FIRST, SLOT_LAST, &slot)) {
-        return false;
-    }
-    if (!read_integer("Введите ID предмета (0-9): ", ITEM_ID_MIN, ITEM_ID_MAX, &item_id)) {
+    if (slot < SLOT_FIRST || slot > SLOT_LAST ||
+        item_id < ITEM_ID_MIN || item_id > ITEM_ID_MAX) {
         return false;
     }
 
     inventory[slot] = item_id;
-    printf("В слоте %d теперь: [%d] (%s).\n",
-           slot, item_id, item_name(item_id));
     return true;
 }
 
-bool inventory_drop_item(void)
+bool inventory_clear_slot(int slot)
 {
-    int slot;
-
-    if (!read_integer("Введите индекс слота (0-9): ", SLOT_FIRST, SLOT_LAST, &slot)) {
+    if (slot < SLOT_FIRST || slot > SLOT_LAST) {
         return false;
     }
 
     inventory[slot] = ITEM_EMPTY;
-    printf("предмет из Слота %d выброшен.\n", slot);
     return true;
+}
+
+int inventory_get_slot(int slot)
+{
+    if (slot < SLOT_FIRST || slot > SLOT_LAST) {
+        return ITEM_EMPTY;
+    }
+
+    return inventory[slot];
 }
 
 int *inventory_items(void)
 {
     return inventory;
+}
+
+int inventory_find_slots(int item_id, int slots_out[INVENTORY_SIZE])
+{
+    int slot;
+    int found_count = 0;
+
+    for (slot = SLOT_FIRST; slot <= SLOT_LAST; ++slot) {
+        if (inventory[slot] == item_id) {
+            slots_out[found_count] = slot;
+            ++found_count;
+        }
+    }
+
+    return found_count;
+}
+
+void inventory_write(FILE *stream, char item_names[MAX_ITEMS][MAX_NAME_LEN])
+{
+    int slot;
+
+    for (slot = SLOT_FIRST; slot <= SLOT_LAST; ++slot) {
+        int item_id = inventory[slot];
+        fprintf(stream, "Слот %d: [%d] - %s\n",
+                slot, item_id, item_catalog_get_name(item_names, item_id));
+    }
 }
