@@ -82,6 +82,10 @@ static void place_down_stair(char **map, int height, int width,
 static bool generate_dungeon_floor(char ***map_out, int *height_out, int *width_out,
                                    int *player_x_out, int *player_y_out)
 {
+    static const char obstacle_tiles[OBSTACLE_TYPE_COUNT] = {
+        TILE_OBSTACLE_FIRST,
+        TILE_OBSTACLE_SECOND
+    };
     char **map;
     int row;
     int column;
@@ -114,9 +118,7 @@ static bool generate_dungeon_floor(char ***map_out, int *height_out, int *width_
             } else if (random_between(DIRECTION_STEP, PERCENT_CHANCE_MAX) <= obstacle_percent) {
                 int obstacle_type = random_between(DIRECTION_NONE,
                                                    OBSTACLE_TYPE_COUNT - DIRECTION_STEP);
-                map[row][column] = obstacle_type == DIRECTION_NONE
-                    ? TILE_TREE
-                    : TILE_ROCK;
+                map[row][column] = obstacle_tiles[obstacle_type];
             } else if (random_between(DIRECTION_STEP, PERCENT_CHANCE_MAX) <= ICE_CHANCE_PERCENT) {
                 map[row][column] = TILE_ICE;
             } else {
@@ -143,24 +145,52 @@ static bool generate_dungeon_floor(char ***map_out, int *height_out, int *width_
     return true;
 }
 
+static void print_map_border(int width)
+{
+    int column;
+
+    printf("   +");
+    for (column = 0; column < width; ++column) {
+        printf("---");
+    }
+    puts("+");
+}
+
 static void print_map(char **map, int height, int width,
                       int player_x, int player_y, int depth)
 {
     int row;
     int column;
 
-    printf("Подземелье, этаж %d, карта %d x %d.\n", depth, height, width);
-    puts("Обозначения: @ — фермер, ~ — лёд, U — лестница вверх, D — лестница вниз.");
+    printf("\n========== ПОДЗЕМЕЛЬЕ | ЭТАЖ %d ==========\n", depth);
+    printf("Размер карты: ширина %d x высота %d | Позиция фермера: столбец %d, строка %d\n",
+           width, height, player_x + DIRECTION_STEP, player_y + DIRECTION_STEP);
+    puts("Управление: W — вверх, A — влево, S — вниз, D — вправо; Q — выход на U.");
+
+    printf("    ");
+    for (column = 0; column < width; ++column) {
+        printf("%2d ", column + DIRECTION_STEP);
+    }
+    putchar('\n');
+    print_map_border(width);
 
     for (row = 0; row < height; ++row) {
+        printf("%2d |", row + DIRECTION_STEP);
         for (column = 0; column < width; ++column) {
-            if (row == player_y && column == player_x) {
-                putchar(TILE_HERO);
-            } else {
-                putchar(map[row][column]);
-            }
+            char tile = row == player_y && column == player_x
+                ? TILE_HERO
+                : map[row][column];
+            printf(" %c ", tile);
         }
-        putchar('\n');
+        puts("|");
+    }
+    print_map_border(width);
+
+    puts("Легенда: @ фермер | # стена | . пол | T дерево-препятствие | R камень-препятствие | ~ лёд | U вверх | D вниз.");
+    if (map[player_y][player_x] == TILE_UP_STAIR) {
+        puts("Фермер стоит на лестнице U: нажмите Q, чтобы выйти из подземелья.");
+    } else if (map[player_y][player_x] == TILE_ICE) {
+        puts("Фермер стоит на льду: при следующем движении он продолжит скользить.");
     }
 }
 
@@ -189,7 +219,8 @@ static bool direction_delta(char direction, int *delta_x, int *delta_y)
 
 static bool is_inside_map(int x, int y, int width, int height)
 {
-    return x >= SLOT_FIRST && x < width && y >= SLOT_FIRST && y < height;
+    return x >= MAP_INDEX_MIN && x < width &&
+           y >= MAP_INDEX_MIN && y < height;
 }
 
 static bool is_walkable(char tile)
@@ -247,7 +278,7 @@ void adventure_run(void)
         return;
     }
 
-    puts("Приключение началось. Управление: W/A/S/D, Q — выйти только с лестницы U.");
+    puts("Приключение началось. W/A/S/D — движение (D — вправо); Q — выход только на U.");
     print_map(map, height, width, player_x, player_y, depth);
 
     while (true) {
@@ -258,7 +289,7 @@ void adventure_run(void)
         int new_x;
         int new_y;
 
-        if (!read_line("Ваш ход (W/A/S/D/Q): ", command, sizeof(command))) {
+        if (!read_line("Ход (W/A/S/D; Q — выход на U): ", command, sizeof(command))) {
             puts("Ввод завершён. Выход из приключения.");
             break;
         }
