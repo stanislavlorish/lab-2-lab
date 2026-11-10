@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "adventure.h"
 #include "diary.h"
 #include "game_time.h"
 #include "input.h"
@@ -11,6 +12,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 static void print_menu(const char *farmer_name)
 {
@@ -25,6 +27,7 @@ static void print_menu(const char *farmer_name)
     puts("[7] Поиск предмета в рюкзаке по названию");
     puts("[8] Записать состояние в дневник фермера");
     puts("[9] Подсчёт ресурсов ");
+    puts("[10] Подземелье");
 }
 
 static bool handle_work(int *current_day, int *current_hour)
@@ -149,6 +152,7 @@ int main(void)
     char farmer_name[MAX_FARMER_NAME_LEN];
     char item_names[MAX_ITEMS][MAX_NAME_LEN];
 
+    srand((unsigned int)time(NULL));
     inventory_initialize();
     item_catalog_load(item_names);
 
@@ -223,6 +227,10 @@ int main(void)
 
             case MENU_RESOURCE_REPORT:
                 resource_report_run();
+                break;
+
+            case MENU_ADVENTURE:
+                adventure_run();
                 break;
 
             default:
