@@ -1,9 +1,9 @@
 #ifndef FARMER_ITEM_CATALOG_H
 #define FARMER_ITEM_CATALOG_H
 
-#include <stdbool.h>
-
 #include "constants.h"
+
+#include <stdbool.h>
 
 void item_catalog_load(char item_names[MAX_ITEMS][MAX_NAME_LEN]);
 const char *item_catalog_get_name(char item_names[MAX_ITEMS][MAX_NAME_LEN], int item_id);
